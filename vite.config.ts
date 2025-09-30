@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // Rolldown-Vite + SWC 配置
 // SWC 处理 React (高性能且兼容)
 export default defineConfig({
-  base: '/w1/',
+  base: '/w2/',
   plugins: [
     // 使用 SWC 处理 React - 兼容 rolldown-vite
     react(),
