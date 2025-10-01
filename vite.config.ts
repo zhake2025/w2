@@ -191,7 +191,7 @@ export default defineConfig({
 
   // 定义全局常量
   define: {
-    __DEV__: JSON.stringify(import.meta.env.DEV),
-    __PROD__: JSON.stringify(import.meta.env.PROD),
+    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+    __PROD__: JSON.stringify(process.env.NODE_ENV === 'production'),
   },
 })
