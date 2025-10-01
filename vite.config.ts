@@ -1,13 +1,10 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'  // 使用 SWC 处理 React，兼容 rolldown-vite
+import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Rolldown-Vite + SWC 配置
-// SWC 处理 React (高性能且兼容)
 export default defineConfig({
   base: '/w2/',
   plugins: [
-    // 使用 SWC 处理 React - 兼容 rolldown-vite
     react(),
     VitePWA({
   injectRegister: 'script',
@@ -41,7 +38,6 @@ export default defineConfig({
         enabled: false
       }
     })
-    // 注意：Rolldown-Vite 内置了类型检查，不需要额外的 checker 插件
   ],
 
   // 开发服务器配置
@@ -157,7 +153,7 @@ export default defineConfig({
     }
   },
 
-  // 构建配置 - Rolldown-Vite 会自动使用内置优化
+  // 构建配置
   build: {
     sourcemap: false, // 生产环境不生成sourcemap
     target: 'es2022', // 现代浏览器目标，生成更小的代码
@@ -172,7 +168,7 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 500
   },
-  // 优化依赖预构建 - Rolldown-Vite 会自动优化
+  // 优化依赖预构建
   optimizeDeps: {
     include: [
       'react',
@@ -184,7 +180,6 @@ export default defineConfig({
       '@reduxjs/toolkit'
     ],
     force: true
-    // 注意：Rolldown-Vite 使用内置优化，不需要 esbuildOptions
   },
 
   // 缓存配置

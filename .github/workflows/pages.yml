@@ -26,8 +26,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
       - name: Install
-        run: npm ci
+        run: npm install
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build
         run: npm run build
