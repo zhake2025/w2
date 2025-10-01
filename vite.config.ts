@@ -155,18 +155,15 @@ export default defineConfig({
 
   // 构建配置
   build: {
-    sourcemap: false, // 生产环境不生成sourcemap
-    target: 'es2022', // 现代浏览器目标，生成更小的代码
+    sourcemap: false,
+    target: 'es2022',
     outDir: 'dist',
     rollupOptions: {
       output: {
-        // 使用 static 目录结构
-        chunkFileNames: 'static/js/[name]-[hash].js',
-        entryFileNames: 'static/js/[name]-[hash].js',
-        assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
-      },
+        manualChunks: undefined
+      }
     },
-    chunkSizeWarningLimit: 500
+    chunkSizeWarningLimit: 1000
   },
   // 优化依赖预构建
   optimizeDeps: {
@@ -194,7 +191,7 @@ export default defineConfig({
 
   // 定义全局常量
   define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
-    __PROD__: JSON.stringify(process.env.NODE_ENV === 'production'),
+    __DEV__: JSON.stringify(import.meta.env.DEV),
+    __PROD__: JSON.stringify(import.meta.env.PROD),
   },
 })
