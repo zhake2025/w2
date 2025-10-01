@@ -552,52 +552,52 @@ export const ChatPageUI: React.FC<ChatPageUIProps> = ({
   ]);
 
   const InputContainer = useMemo(() => (
-    <motion.div
-      animate={isDrawerVisible ? LAYOUT_CONFIGS.SIDEBAR_OPEN.inputContainer : LAYOUT_CONFIGS.SIDEBAR_CLOSED.inputContainer}
-      transition={ANIMATION_CONFIG}
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        zIndex: 2,
-        backgroundColor: 'transparent',
-        boxShadow: 'none',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-      }}
-    >
-      {shouldShowToolbar && (
+    <div className="chat-input-wrapper">
+      <motion.div
+        animate={isDrawerVisible ? LAYOUT_CONFIGS.SIDEBAR_OPEN.inputContainer : LAYOUT_CONFIGS.SIDEBAR_CLOSED.inputContainer}
+        transition={ANIMATION_CONFIG}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0,
+        }}
+      >
+        {shouldShowToolbar && (
+          <Box sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            px: 2
+          }}>
+            <ChatToolbar
+              onClearTopic={handleClearTopic}
+              imageGenerationMode={imageGenerationMode}
+              toggleImageGenerationMode={toggleImageGenerationMode}
+              videoGenerationMode={videoGenerationMode}
+              toggleVideoGenerationMode={toggleVideoGenerationMode}
+              webSearchActive={webSearchActive}
+              toggleWebSearch={toggleWebSearch}
+              toolsEnabled={toolsEnabled}
+              onToolsEnabledChange={toggleToolsEnabled}
+            />
+          </Box>
+        )}
+
         <Box sx={{
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
-          px: 2
+          px: isMobile ? 0 : 2  // 移动端不要边距，桌面端保持边距
         }}>
-          <ChatToolbar
-            onClearTopic={handleClearTopic}
-            imageGenerationMode={imageGenerationMode}
-            toggleImageGenerationMode={toggleImageGenerationMode}
-            videoGenerationMode={videoGenerationMode}
-            toggleVideoGenerationMode={toggleVideoGenerationMode}
-            webSearchActive={webSearchActive}
-            toggleWebSearch={toggleWebSearch}
-            toolsEnabled={toolsEnabled}
-            onToolsEnabledChange={toggleToolsEnabled}
-          />
+          {inputComponent}
         </Box>
-      )}
-
-      <Box sx={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        px: isMobile ? 0 : 2  // 移动端不要边距，桌面端保持边距
-      }}>
-        {inputComponent}
-      </Box>
-    </motion.div>
+      </motion.div>
+    </div>
   ), [
     // 🔧 只包含真正影响InputContainer的关键依赖
     isDrawerVisible,
@@ -713,10 +713,13 @@ export const ChatPageUI: React.FC<ChatPageUIProps> = ({
           {currentTopic ? (
             <>
               {/* 消息列表应该有固定的可滚动区域，不会被输入框覆盖 */}
-              <Box sx={{
-                ...baseStyles.messageContainer,
-                ...backgroundStyle
-              }}>
+              <Box 
+                className="enhanced-chat-messages-container"
+                sx={{
+                  ...baseStyles.messageContainer,
+                  ...backgroundStyle
+                }}
+              >
                 <ErrorBoundary>
                   <MessageList
                     messages={currentMessages}
@@ -739,10 +742,10 @@ export const ChatPageUI: React.FC<ChatPageUIProps> = ({
           ) : (
             <>
               <Box
+                className="enhanced-chat-messages-container"
                 sx={{
                   ...baseStyles.messageContainer,
                   ...backgroundStyle,
-                  marginBottom: '100px', // 为输入框留出足够空间
                 }}
               >
                 <Box sx={baseStyles.welcomeContainer}>

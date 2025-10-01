@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -14,9 +14,11 @@ import {
   ListItemIcon,
   Divider,
   Avatar,
-  useMediaQuery
+  useMediaQuery,
+  TextField,
+  InputAdornment
 } from '@mui/material';
-import { X as CloseIcon, Check as CheckIcon } from 'lucide-react';
+import { X as CloseIcon, Check as CheckIcon, Search as SearchIcon } from 'lucide-react';
 import type { Model } from '../../../shared/types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../shared/store';
@@ -111,6 +113,7 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [activeTab, setActiveTab] = React.useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const providers = useSelector((state: RootState) => state.settings.providers || EMPTY_PROVIDERS_ARRAY);
 
   // 优化提供商名称映射 - 使用 useMemo 预计算
@@ -127,12 +130,36 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
     return providerNameMap.get(providerId) || providerId;
   }, [providerNameMap]);
 
-  // 优化按提供商分组的模型 - 修复依赖项问题
+  // 搜索处理函数
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  }, []);
+
+  // 过滤模型基于搜索词
+  const filteredModels = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return availableModels;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    return availableModels.filter(model => {
+      const modelName = (model.name || model.id).toLowerCase();
+      const modelId = model.id.toLowerCase();
+      const providerName = getProviderName(model.provider || model.providerType || '').toLowerCase();
+      
+      return modelName.includes(searchLower) || 
+             modelId.includes(searchLower) || 
+             providerName.includes(searchLower);
+    });
+  }, [availableModels, searchTerm, getProviderName]);
+
+  // 优化按提供商分组的模型 - 修复依赖项问题，并支持搜索过滤
   const groupedModels = useMemo(() => {
     const groups: Record<string, Model[]> = {};
     const providersMap: Record<string, { id: string, displayName: string }> = {};
 
-    availableModels.forEach(model => {
+    // 使用过滤后的模型列表
+    filteredModels.forEach(model => {
       const providerId = model.provider || model.providerType || '未知';
       const displayName = getProviderName(providerId);
 
@@ -153,7 +180,7 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
     providersArray.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     return { groups, providers: providersArray };
-  }, [availableModels, getProviderName]);
+  }, [filteredModels, getProviderName]);
 
   // 优化标签页切换处理函数 - 使用 useCallback
   const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: string) => {
@@ -189,6 +216,29 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
 
         <Divider />
 
+        {/* 搜索框 */}
+        <Box sx={{ p: 2, pb: 1 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="搜索模型..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon size={20} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          />
+        </Box>
+
         <Box sx={DIALOG_STYLES.tabsContainer}>
           <Tabs
             value={activeTab}
@@ -207,8 +257,8 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
         <DialogContent sx={DIALOG_STYLES.dialogContent}>
           <List sx={DIALOG_STYLES.list}>
             {activeTab === 'all' ? (
-              // 显示所有模型
-              availableModels.map((model) => (
+              // 显示所有过滤后的模型
+              filteredModels.map((model) => (
                 <ModelItem
                   key={`${model.id}-${model.provider}`}
                   model={model}
@@ -219,7 +269,7 @@ export const DialogModelSelector: React.FC<DialogModelSelectorProps> = ({
                 />
               ))
             ) : (
-              // 显示特定提供商的模型
+              // 显示特定提供商的过滤后模型
               groupedModels.groups[activeTab]?.map((model) => (
                 <ModelItem
                   key={`${model.id}-${model.provider}`}

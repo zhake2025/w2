@@ -26,6 +26,10 @@ export function createClient(model: Model): OpenAI {
 
     // 检查是否需要特殊处理（在移除斜杠之前）
     const forceUseOriginalHost = () => {
+      // 检查是否以#结尾，如果是则强制使用原始格式
+      if (baseURL.endsWith('#')) {
+        return true;
+      }
       if (baseURL.endsWith('/')) {
         return true;
       }
@@ -38,8 +42,13 @@ export function createClient(model: Model): OpenAI {
 
     const shouldUseOriginal = forceUseOriginalHost();
 
+    // 如果以#结尾，移除#字符但保持原始格式
+    if (baseURL.endsWith('#')) {
+      baseURL = baseURL.slice(0, -1);
+      console.log(`[OpenAI createClient] 检测到#字符，强制使用原始格式: ${baseURL}`);
+    }
     // 确保baseURL格式正确
-    if (baseURL.endsWith('/')) {
+    else if (baseURL.endsWith('/')) {
       baseURL = baseURL.slice(0, -1);
     }
 

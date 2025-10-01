@@ -201,7 +201,10 @@ export async function sendChatRequest(
 
     // 检查模型是否有API密钥
     if (!model.apiKey && model.provider !== 'auto') {
-      console.warn(`[ProviderFactory.sendChatRequest] 警告: 模型 ${model.id} 没有API密钥`);
+      // 只在开发环境显示API密钥警告
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[ProviderFactory.sendChatRequest] 警告: 模型 ${model.id} 没有API密钥`);
+      }
     }
 
     // 强制检查：确保消息数组不为空

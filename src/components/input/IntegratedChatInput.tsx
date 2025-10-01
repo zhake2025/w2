@@ -175,11 +175,52 @@ const IntegratedChatInput: React.FC<IntegratedChatInputProps> = ({
   const iconColor = themeColors.isDark ? '#ffffff' : '#000000'; // 深色主题用白色，浅色主题用黑色
   const disabledColor = themeColors.isDark ? '#555' : '#ccc';
 
-  // 检测iOS设备
+  // 检测iOS设备和PWA模式
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                        (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
     setIsIOS(isIOSDevice);
+    
+    // 为iOS设备添加平台类名
+    if (isIOSDevice) {
+      document.body.classList.add('platform-ios');
+      
+      // 检测PWA模式
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                    (window.navigator as any).standalone === true;
+      
+      if (isPWA) {
+        document.body.classList.add('pwa-mode');
+      }
+      
+      // 监听视口变化以检测虚拟键盘
+      const handleViewportChange = () => {
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const windowHeight = window.screen.height;
+        const keyboardThreshold = windowHeight * 0.75; // 75%阈值判断键盘是否弹出
+        
+        if (viewportHeight < keyboardThreshold) {
+          document.body.classList.add('keyboard-visible');
+        } else {
+          document.body.classList.remove('keyboard-visible');
+        }
+      };
+      
+      // 监听视口变化
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleViewportChange);
+      } else {
+        window.addEventListener('resize', handleViewportChange);
+      }
+      
+      return () => {
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleViewportChange);
+        } else {
+          window.removeEventListener('resize', handleViewportChange);
+        }
+      };
+    }
   }, []);
 
   // 图片处理公共函数

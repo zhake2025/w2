@@ -21,8 +21,11 @@ export class OpenAIResponseProvider extends BaseOpenAIResponseProvider {
     // 获取 Responses API 专用的基础 URL
     const responsesAPIBaseURL = this.getResponsesAPIBaseURL(model.baseUrl);
 
-    console.log(`[OpenAIResponseProvider] 使用 Responses API 基础 URL: ${responsesAPIBaseURL}`);
-    console.log(`[OpenAIResponseProvider] 原始 baseUrl: ${model.baseUrl || '未设置'}`);
+    // 只在开发环境输出调试信息
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[OpenAIResponseProvider] 使用 Responses API 基础 URL: ${responsesAPIBaseURL}`);
+      console.log(`[OpenAIResponseProvider] 原始 baseUrl: ${model.baseUrl || '未设置'}`);
+    }
 
     // 初始化 OpenAI SDK - 使用 Responses API 专用配置
     this.sdk = new OpenAI({
@@ -41,6 +44,13 @@ export class OpenAIResponseProvider extends BaseOpenAIResponseProvider {
    */
   private getResponsesAPIBaseURL(customBaseUrl?: string): string {
     if (customBaseUrl) {
+      // 检查是否以#结尾，如果是则强制使用原始格式
+      if (customBaseUrl.endsWith('#')) {
+        const cleanUrl = customBaseUrl.slice(0, -1);
+        console.log(`[OpenAIResponseProvider] 检测到#字符，强制使用原始格式: ${cleanUrl}`);
+        return cleanUrl;
+      }
+      
       // 检查是否为 Azure OpenAI
       if (customBaseUrl.includes('.openai.azure.com')) {
         // Azure OpenAI 的 Responses API 格式

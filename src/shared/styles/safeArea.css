@@ -50,31 +50,37 @@
   box-sizing: border-box;
 }
 
-/* 聊天消息列表容器 */
+/* 聊天消息列表容器 - 确保始终在输入框上方 */
 .chat-messages-container {
   /* 确保消息列表不被状态栏和底部导航栏遮挡 */
   padding-top: calc(var(--safe-area-inset-top) + 8px);
-  padding-bottom: calc(var(--safe-area-inset-bottom) + 80px); /* 80px 为输入框高度 */
+  padding-bottom: calc(var(--safe-area-inset-bottom) + 100px); /* 增加底部间距确保不被输入框遮挡 */
+  padding-left: 8px; /* 为左滑手势留出空间 */
+  padding-right: 8px;
   min-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
   min-height: calc(100dvh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+  margin-bottom: 0; /* 确保没有额外的底部边距 */
 }
 
-/* 聊天输入框容器 */
+/* 聊天输入框容器 - 优化布局，为手势留出空间 */
 .chat-input-container {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 12px; /* 为左滑手势留出空间 */
+  right: 12px; /* 保持对称 */
   z-index: 1000;
   
   /* 使用安全区域变量确保不被底部导航栏遮挡 */
-  padding-bottom: var(--chat-input-bottom-padding);
-  padding-left: var(--safe-area-inset-left);
-  padding-right: var(--safe-area-inset-right);
+  padding: 12px 16px;
+  padding-bottom: calc(var(--chat-input-bottom-padding) + 12px);
+  padding-left: calc(var(--safe-area-inset-left) + 8px);
+  padding-right: calc(var(--safe-area-inset-right) + 8px);
   
   /* 背景和边框 */
   background: var(--mui-palette-background-paper);
   border-top: 1px solid var(--mui-palette-divider);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
   
   /* 确保在 Android 15 上正确显示 */
   box-sizing: border-box;
@@ -84,7 +90,42 @@
 @supports (padding: max(0px)) {
   .chat-input-container {
     /* 使用 max() 确保至少有基础 padding */
-    padding-bottom: max(var(--chat-input-bottom-padding), 8px);
+    padding-bottom: max(calc(var(--chat-input-bottom-padding) + 12px), 20px);
+  }
+}
+
+/* 移动端响应式优化 */
+@media (max-width: 768px) {
+  .chat-input-container {
+    left: 8px; /* 手机端更小的边距 */
+    right: 8px;
+    padding: 10px 14px;
+    padding-bottom: calc(var(--chat-input-bottom-padding) + 10px);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .chat-messages-container {
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 90px);
+  }
+}
+
+/* 平板和桌面端优化 */
+@media (min-width: 769px) {
+  .chat-input-container {
+    left: 20px;
+    right: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    transform: translateX(0);
+  }
+  
+  .chat-messages-container {
+    padding-left: 16px;
+    padding-right: 16px;
+    max-width: 840px; /* 与输入框保持一致的最大宽度 */
+    margin: 0 auto;
   }
 }
 
@@ -145,8 +186,63 @@
 }
 
 .platform-ios .chat-input-container {
-  /* iOS 特殊处理 */
+  /* iOS 特殊处理 - 确保输入框不被虚拟键盘遮挡 */
   padding-bottom: max(var(--safe-area-inset-bottom), 8px);
+  /* iOS Safari 特殊处理 */
+  transform: translateZ(0); /* 强制硬件加速，避免渲染问题 */
+  -webkit-transform: translateZ(0);
+}
+
+/* iOS PWA 专用样式 */
+@media (display-mode: standalone) {
+  .platform-ios .chat-input-container {
+    /* PWA 模式下的额外处理 */
+    left: 10px;
+    right: 10px;
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 15px);
+    /* 确保在 PWA 模式下有足够的底部间距 */
+    min-height: 60px;
+    border-radius: 14px 14px 0 0;
+  }
+  
+  .platform-ios .chat-messages-container {
+    /* PWA 模式下确保消息列表有足够的底部间距 */
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 110px); /* 增加到110px */
+  }
+}
+
+/* iOS Safari 虚拟键盘处理 */
+@supports (-webkit-touch-callout: none) {
+  .platform-ios .chat-input-container {
+    /* iOS Safari 特殊处理 */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001; /* 提高层级确保不被遮挡 */
+  }
+  
+  /* 当虚拟键盘弹出时的处理 */
+  .platform-ios.keyboard-visible .chat-input-container {
+    /* 键盘可见时的特殊处理 */
+    left: 8px;
+    right: 8px;
+    padding-bottom: 10px;
+    transform: translateY(0);
+    -webkit-transform: translateY(0);
+    transition: all 0.3s ease-in-out;
+    -webkit-transition: all 0.3s ease-in-out;
+  }
+  
+  .platform-ios.keyboard-visible .chat-messages-container {
+    /* 键盘可见时调整消息容器 */
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-bottom: calc(var(--safe-area-inset-bottom) + 130px);
+    transition: padding 0.3s ease-in-out;
+  }
 }
 
 /* 调试样式（开发时可用） */

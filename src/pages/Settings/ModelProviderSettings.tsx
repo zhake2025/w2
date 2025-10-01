@@ -86,15 +86,44 @@ const STYLES = {
 } as const;
 
 /**
- * 格式化API主机地址 - 简化逻辑，更明确的处理方式
- * @param host 输入的基础URL
+ * 格式化API主机地址 - 智能识别完整API路径
+ * @param host 输入的基础URL或完整API路径
  * @param providerType 提供商类型
  * @returns 格式化后的URL
  */
 const formatApiHost = (host: string, providerType?: string): string => {
   if (!host.trim()) return '';
 
-  const normalizedUrl = host.trim().replace(/\/$/, '');
+  let normalizedUrl = host.trim();
+
+  // 检查是否以#结尾，如果是则强制使用原始格式（移除#字符）
+  if (normalizedUrl.endsWith('#')) {
+    return normalizedUrl.slice(0, -1);
+  }
+
+  // 移除末尾的斜杠
+  normalizedUrl = normalizedUrl.replace(/\/$/, '');
+
+  // 检查是否已经是完整的API路径
+  const isCompleteApiPath = (
+    normalizedUrl.includes('/chat/completions') ||
+    normalizedUrl.includes('/completions') ||
+    normalizedUrl.includes('/models') ||
+    normalizedUrl.includes('/v1/') ||
+    normalizedUrl.includes('/v2/') ||
+    normalizedUrl.includes('/v3/') ||
+    normalizedUrl.includes('/v4/') ||
+    normalizedUrl.includes('/api/') ||
+    normalizedUrl.endsWith('/v1') ||
+    normalizedUrl.endsWith('/v2') ||
+    normalizedUrl.endsWith('/v3') ||
+    normalizedUrl.endsWith('/v4')
+  );
+
+  // 如果是完整的API路径，直接返回
+  if (isCompleteApiPath) {
+    return normalizedUrl;
+  }
 
   // 特殊处理：如果URL以特定路径结尾，保持原样
   if (normalizedUrl.endsWith(CONSTANTS.SPECIAL_ENDPOINTS.VOLCES)) {
@@ -106,17 +135,24 @@ const formatApiHost = (host: string, providerType?: string): string => {
     return normalizedUrl;
   }
 
-  // 默认添加 /v1
+  // 对于基础URL，默认添加 /v1
   return `${normalizedUrl}/v1`;
 };
 
 /**
- * 生成预览URL
+ * 生成预览URL - 智能处理完整API路径
  */
 const getPreviewUrl = (baseUrl: string, providerType?: string): string => {
   if (!baseUrl.trim()) return '';
 
   const formattedHost = formatApiHost(baseUrl, providerType);
+
+  // 检查是否已经是完整的API路径
+  if (formattedHost.includes('/chat/completions') || 
+      formattedHost.includes('/completions') ||
+      formattedHost.includes('/models')) {
+    return formattedHost; // 直接返回完整路径
+  }
 
   if (providerType === CONSTANTS.SPECIAL_ENDPOINTS.OPENAI_RESPONSE) {
     return `${formattedHost}/responses`;
@@ -137,13 +173,19 @@ const isOpenAIProvider = (providerType?: string): boolean => {
 };
 
 /**
- * 显示用的URL补全函数 - 仅用于显示完整的API端点
- * @param baseUrl 基础URL
+ * 显示用的URL补全函数 - 智能显示完整的API端点
+ * @param baseUrl 基础URL或完整API路径
  * @param providerType 提供商类型
  * @returns 显示用的完整API端点
  */
 const getCompleteApiUrl = (baseUrl: string, providerType?: string): string => {
   if (!baseUrl.trim()) return '';
+  
+  // 检查是否以#结尾，如果是则强制使用原始格式
+  if (baseUrl.endsWith('#')) {
+    return baseUrl.slice(0, -1); // 移除#字符，但保持原始格式
+  }
+  
   return getPreviewUrl(baseUrl, providerType);
 };
 
@@ -1102,13 +1144,17 @@ const ModelProviderSettings: React.FC = () => {
                               </span>
                             )}
                             <span style={{ display: 'block', color: 'text.secondary', marginBottom: '4px', fontSize: '0.75rem' }}>
-                              在URL末尾添加#可强制使用自定义格式，末尾添加/也可保持原格式
+                              支持基础URL（如 https://api.example.com）或完整API路径（如 https://api.suanli.cn/v3/chat/completions）
+                            </span>
+                            <span style={{ display: 'block', color: 'text.secondary', marginBottom: '4px', fontSize: '0.75rem' }}>
+                              在URL末尾添加#可强制使用原始格式，不进行任何路径处理
                             </span>
                             {baseUrl && isOpenAIProvider(provider?.providerType) && (
                               <span
                                 style={{
                                   display: 'inline-block',
-                                  color: baseUrl.endsWith('#') || baseUrl.endsWith('/') ? '#ed6c02' : '#666',
+                                  color: baseUrl.endsWith('#') ? '#ed6c02' : 
+                                         (baseUrl.includes('/chat/completions') || baseUrl.includes('/completions')) ? '#2e7d32' : '#666',
                                   fontFamily: 'monospace',
                                   fontSize: '0.7rem',
                                   backgroundColor: 'rgba(0, 0, 0, 0.04)',
@@ -1117,8 +1163,8 @@ const ModelProviderSettings: React.FC = () => {
                                   marginTop: '4px'
                                 }}
                               >
-                                {baseUrl.endsWith('#') ? '强制使用: ' :
-                                 baseUrl.endsWith('/') ? '保持原格式: ' : '完整地址: '}
+                                {baseUrl.endsWith('#') ? '强制原始格式: ' :
+                                 (baseUrl.includes('/chat/completions') || baseUrl.includes('/completions')) ? '检测到完整路径: ' : '将使用: '}
                                 {getCompleteApiUrl(baseUrl, provider?.providerType)}
                               </span>
                             )}

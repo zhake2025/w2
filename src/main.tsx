@@ -4,6 +4,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import './shared/styles/safeArea.css';
+import './shared/styles/enhancedChatLayout.css';
 import { initStorageService, dexieStorage } from './shared/services/storage/storageService';
 import { initializeServices } from './shared/services';
 // 移除旧的系统提示词slice引用
@@ -12,6 +14,7 @@ import { initializeServices } from './shared/services';
 // 导入 EventSource polyfill 以支持移动端 SSE
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { Capacitor } from '@capacitor/core';
+import { initializePlatformDetection } from './shared/utils/platformUtils';
 
 
 //  保存原生fetch引用，防止被拦截器覆盖
@@ -46,6 +49,9 @@ async function initializeApp() {
 
     console.log(`[INFO] ${isFirstTime ? '首次安装' : '正常启动'}，启动画面最小显示时间: ${minSplashDuration}ms`);
 
+    // 初始化平台检测
+    initializePlatformDetection();
+    
     // 立即渲染应用，避免白屏
     createRoot(document.getElementById('root')!).render(
       <StrictMode>

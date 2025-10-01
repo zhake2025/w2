@@ -17,9 +17,10 @@ import {
   Skeleton,
   Fade,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Collapse
 } from '@mui/material';
-import { Plus as AddIcon, Minus as RemoveIcon, Search as SearchIcon, Database } from 'lucide-react';
+import { Plus as AddIcon, Minus as RemoveIcon, Search as SearchIcon, Database, ChevronDown, ChevronRight } from 'lucide-react';
 import { alpha } from '@mui/material/styles';
 import { FixedSizeList } from 'react-window';
 import type { ListChildComponentProps } from 'react-window';
@@ -44,12 +45,14 @@ interface RowData {
   handleAddGroup: (group: string) => void;
   handleRemoveGroup: (group: string) => void;
   groupedModels: GroupedModels;
+  collapsedGroups: Set<string>;
+  toggleGroupCollapse: (group: string) => void;
 }
 
 // Row component, memoized for performance.
 const Row = React.memo(({ index, style, data }: ListChildComponentProps<RowData>) => {
   const theme = useTheme();
-  const { items, isModelInProvider, handleAddSingleModel, handleRemoveSingleModel, handleAddGroup, handleRemoveGroup, groupedModels } = data;
+  const { items, isModelInProvider, handleAddSingleModel, handleRemoveSingleModel, handleAddGroup, handleRemoveGroup, groupedModels, collapsedGroups, toggleGroupCollapse } = data;
   const item = items[index];
 
   // Render Group Header
@@ -57,6 +60,7 @@ const Row = React.memo(({ index, style, data }: ListChildComponentProps<RowData>
     const groupModels = groupedModels[item.name] || [];
     const addableModels = groupModels.filter(model => !isModelInProvider(model.id));
     const removableModels = groupModels.filter(model => isModelInProvider(model.id));
+    const isCollapsed = collapsedGroups.has(item.name);
 
     return (
       <Box
@@ -70,15 +74,35 @@ const Row = React.memo(({ index, style, data }: ListChildComponentProps<RowData>
           backgroundColor: (theme) => alpha(theme.palette.background.default, 0.95),
           borderBottom: '1px solid',
           borderColor: 'divider',
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.85),
+          }
         }}
+        onClick={() => toggleGroupCollapse(item.name)}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            size="small"
+            sx={{ 
+              mr: 1, 
+              p: 0.5,
+              color: 'text.secondary',
+              '&:hover': { bgcolor: 'transparent' }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleGroupCollapse(item.name);
+            }}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+          </IconButton>
           <Typography variant="subtitle2" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {item.name}
           </Typography>
           <Chip label={item.modelCount} size="small" sx={{ ml: 1.5, height: 20, fontSize: '0.7rem' }} />
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
           {addableModels.length > 0 && (
             <IconButton
               size="small"
@@ -202,6 +226,7 @@ const ModelManagementDialog: React.FC<ModelManagementDialogProps> = ({
   const [searchInputValue, setSearchInputValue] = useState<string>(''); // 输入框显示值
   const [actualSearchTerm, setActualSearchTerm] = useState<string>(''); // 实际搜索值
   const [pendingModels, setPendingModels] = useState<Map<string, boolean>>(new Map());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set()); // 折叠的组
 
   // 恢复 useTransition 进行性能优化
   const [isSearchPending, startSearchTransition] = useTransition();
@@ -270,12 +295,16 @@ const ModelManagementDialog: React.FC<ModelManagementDialogProps> = ({
     for (const groupName of sortedGroupNames) {
       const modelsInGroup = groupedModels[groupName];
       data.push({ type: 'group', name: groupName, modelCount: modelsInGroup.length });
-      modelsInGroup.forEach((model: Model) => {
-        data.push({ type: 'model', data: model });
-      });
+      
+      // 只有当组没有被折叠时才添加模型
+      if (!collapsedGroups.has(groupName)) {
+        modelsInGroup.forEach((model: Model) => {
+          data.push({ type: 'model', data: model });
+        });
+      }
     }
     return data;
-  }, [groupedModels]);
+  }, [groupedModels, collapsedGroups]);
 
   const handleAddSingleModel = useCallback((model: Model) => {
     if (!isModelInProvider(model.id)) {
@@ -351,6 +380,19 @@ const ModelManagementDialog: React.FC<ModelManagementDialogProps> = ({
     }
   }, [groupedModels, isModelInProvider, onRemoveModels, onRemoveModel]);
 
+  // 切换组的折叠状态
+  const toggleGroupCollapse = useCallback((group: string) => {
+    setCollapsedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(group)) {
+        newSet.delete(group);
+      } else {
+        newSet.add(group);
+      }
+      return newSet;
+    });
+  }, []);
+
   const itemData = useMemo((): RowData => ({
     items: flattenedData,
     isModelInProvider,
@@ -359,7 +401,9 @@ const ModelManagementDialog: React.FC<ModelManagementDialogProps> = ({
     handleAddGroup,
     handleRemoveGroup,
     groupedModels,
-  }), [flattenedData, isModelInProvider, handleAddSingleModel, handleRemoveSingleModel, handleAddGroup, handleRemoveGroup, groupedModels]);
+    collapsedGroups,
+    toggleGroupCollapse,
+  }), [flattenedData, isModelInProvider, handleAddSingleModel, handleRemoveSingleModel, handleAddGroup, handleRemoveGroup, groupedModels, collapsedGroups, toggleGroupCollapse]);
 
   // 加载模型列表
   const loadModels = async () => {

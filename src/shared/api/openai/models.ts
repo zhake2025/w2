@@ -17,7 +17,10 @@ export async function fetchModels(provider: any): Promise<any[]> {
     const apiKey = provider.apiKey;
     
     if (!apiKey) {
-      console.warn('[fetchOpenAIModels] 警告: 未提供API密钥，可能导致请求失败');
+      // 只在开发环境显示API密钥警告
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[fetchOpenAIModels] 警告: 未提供API密钥，可能导致请求失败');
+      }
     }
     
     // 构建API端点
@@ -61,7 +64,10 @@ export async function fetchModels(provider: any): Promise<any[]> {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`[fetchOpenAIModels] API请求失败: ${response.status}, ${errorText}`);
+      // 只在开发环境显示详细错误信息
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[fetchOpenAIModels] API请求失败: ${response.status}, ${errorText}`);
+      }
       
       // 记录API响应
       logApiResponse('OpenAI Models', response.status, {
