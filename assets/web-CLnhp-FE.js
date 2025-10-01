@@ -1,0 +1,1 @@
+import{zt as e}from"./index-CPmokYSd.js";var t=class extends e{async enable(e){}async disable(e){}};export{t as SafeAreaWeb};
